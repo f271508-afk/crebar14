@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>柱鋼筋續接器計算小工具</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#1c2430;--mute:#5f6b7a;--line:#d5dbe3;--head:#eef1f5;--blue:#2563eb;--sum:#fdf1c8;--red:#d6455d;--inbg:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181e;--card:#1c222b;--ink:#e5e9ef;--mute:#9aa5b4;--line:#35404e;--head:#252d38;--blue:#5b8def;--sum:#4a4220;--red:#ff7b90;--inbg:#14181e}}
+:root[data-theme="dark"]{--bg:#14181e;--card:#1c222b;--ink:#e5e9ef;--mute:#9aa5b4;--line:#35404e;--head:#252d38;--blue:#5b8def;--sum:#4a4220;--red:#ff7b90;--inbg:#14181e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:18px 14px 40px}
+h1{font-size:1.35rem;margin:0 0 14px}
+h2{font-size:1rem;margin:26px 0 8px;padding-left:10px;border-left:4px solid var(--blue)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.dcell{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px}
+.dcell input{width:80px}
+button{font:inherit;border:0;border-radius:6px;padding:9px 16px;color:#fff;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.b-o{background:#c26a0a}.b-g{background:#15803d}.b-p{background:#4f46e5}.b-b{background:var(--blue)}
+.wrap{overflow-x:auto;margin-top:12px;background:var(--card);border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:900px;text-align:center}
+th,td{border:1px solid var(--line);padding:2px 6px;font-size:.9rem;line-height:1.3}
+th{background:var(--head);font-weight:600}
+td input,td select{width:100%;min-width:52px;text-align:center;border:1px solid transparent;background:transparent;color:inherit;font:inherit;padding:1px 4px;border-radius:4px}
+td input:hover,td select:hover,td input:focus,td select:focus{border-color:var(--line);background:var(--inbg)}
+td input[type=number]{min-width:62px}
+td select{min-width:92px;padding-right:20px}
+#imp{display:none}
+.tg{display:inline-flex;gap:4px}
+.tg button{padding:1px 8px;font-size:.75rem;background:var(--inbg);color:var(--ink);border:1px solid var(--line)}
+.tg button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tg button.on.sk{background:#e8821a;border-color:#e8821a}
+.del{background:none;color:var(--red);padding:2px 6px}
+.sum td{background:var(--sum);font-weight:700}
+.man{background:var(--sum);font-weight:700}
+.dim{color:var(--mute)}
+#mt th:nth-child(4),#mt td:nth-child(4),#mt th:nth-child(6),#mt td:nth-child(6),#mt th:nth-child(8),#mt td:nth-child(8){width:78px}
+#mt th:nth-child(3),#mt td:nth-child(3){width:64px}
+#mt td:nth-child(3) input{min-width:0}
+#mt td:nth-child(5) select,#mt td:nth-child(7) select{min-width:84px}
+#mt th:nth-child(5),#mt td:nth-child(5),#mt th:nth-child(7),#mt td:nth-child(7){width:88px}
+#mt th:nth-child(10),#mt td:nth-child(10),#mt th:nth-child(11),#mt td:nth-child(11){width:64px;min-width:64px;user-select:none}
+#mt td:nth-child(10),#mt td:nth-child(11){cursor:pointer}
+#mt td input[type=number]{min-width:0}
+#mt th:nth-child(12),#mt td:nth-child(12){width:140px;min-width:140px}
+summary{cursor:pointer;font-weight:700;margin:18px 0 0;padding-left:10px;border-left:4px solid var(--blue)}
+.note{color:var(--mute);font-size:.8rem;margin-top:10px}
+</style>
+</head>
+<body>
+<main>
+<h1>柱鋼筋續接器計算小工具</h1>
+<div class="bar">
+ <label class="dcell">插筋長度係數 (D)：<input id="D" type="number" value="60" min="1"></label>
+ <label class="dcell">工程案別：<input id="P" type="text" style="width:220px" placeholder="輸入工程名稱"></label>
+ <button class="b-g" id="exp">匯出完整 Excel</button>
+ <button class="b-o" id="pdf">匯出 PDF</button>
+ <button class="b-p" id="impbtn">匯入 Excel</button>
+ <input id="imp" type="file" accept=".xlsx,.xls,.csv">
+</div>
+<details id="fd"><summary>樓層表（先建立）</summary>
+<div class="wrap"><table style="min-width:320px;max-width:460px"><thead><tr><th>樓層</th><th>樓高(cm)</th><th>操作</th></tr></thead><tbody id="fls"></tbody></table></div>
+<p style="margin:10px 0 0"><button class="b-b" id="addF">+ 新增樓層</button></p>
+</details>
+<h2>柱配筋表</h2>
+<div class="wrap" style="margin-top:0"><table id="mt">
+<thead><tr><th>樓層</th><th>高(cm)</th><th>編號</th><th>柱數</th><th>號數1</th><th>支數1</th><th>號數2</th><th>支數2</th><th>續接</th><th>插筋</th><th>錨錠</th><th>長度(m)</th><th>操作</th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+<p style="margin-top:16px"><button class="b-b" id="add">+ 新增一列（依樓層表順序）</button></p>
+
+<h2>鋼筋統計總表</h2>
+<div class="wrap"><table style="min-width:520px"><thead><tr><th>號數</th><th>續接器</th><th>插筋</th><th>錨錠</th><th>重量(kg)</th></tr></thead><tbody id="sum"></tbody></table></div>
+
+<h2>長度區間統計 (支數)</h2>
+<div class="wrap"><table style="min-width:600px"><thead><tr id="bh"></tr></thead><tbody><tr id="bv"></tr></tbody></table></div>
+
+<p class="note">假設：最底層無插筋、無錨錠；有錨錠才有插筋（插筋支數＝錨錠支數）；在插筋或錨錠欄位的格子上點兩下可指定該列「要」（格子會變色），插筋或錨錠＝該列鋼筋支數，再點兩下取消；長度 = D × 鋼筋直徑並計入重量；最頂層錨錠＝該列鋼筋支數；支數差異：下層支數多於上層時，多出的鋼筋在下層頂計為錨錠（不接續接器）；下層支數少於上層時，上層多出的鋼筋不計插筋；續接器＝每一列的鋼筋支數；該列與上一層號數不同時（大轉小或小轉大），續接器、插筋、錨錠都歸入較大的號數。逐層：每層一段；跳層：該列有 1/2 鋼筋（奇數時進位）在本層接續接器、長度為本層樓高；另 1/2 鋼筋貫穿兩層（長度 = 本層 + 上一層樓高），在上一層才接續接器，上一列的鋼筋支數會扣掉這批貫穿筋，避免重複計算。長度欄顯示「本層 / 貫穿兩層」。重量(kg)僅計算插筋：插筋支數 × D × 鋼筋直徑 × 單位重。</p>
+</main>
+<script>
+var BAR={"#3":[9.53,.56],"#4":[12.7,.994],"#5":[15.9,1.56],"#6":[19.1,2.25],"#7":[22.2,3.04],"#8":[25.4,3.98],"#9":[28.7,5.08],"#10":[32.2,6.39],"#11":[35.8,7.99]};
+var KEYS=Object.keys(BAR),LS="coupler-stats-v1";
+var floors=[{fl:"1F",h:300}];
+var rows=[{fl:"1F",h:300,code:"C1",cols:1,b1:"#10",n1:13,b2:"#10",n2:13,skip:false}];
+var $=function(i){return document.getElementById(i)};
+function save(){try{localStorage.setItem(LS,JSON.stringify({D:$("D").value,P:$("P").value,floors:floors,rows:rows}))}catch(e){}}
+function load(){try{var s=JSON.parse(localStorage.getItem(LS)||"null");if(s&&s.rows&&s.rows.length){rows=s.rows;floors=s.floors&&s.floors.length?s.floors:rows.map(function(r){return {fl:r.fl,h:r.h}});$("D").value=s.D||60;$("P").value=s.P||""}}catch(e){}}
+function sel(i,k,v){return "<select data-i='"+i+"' data-k='"+k+"'>"+KEYS.map(function(b){return "<option"+(b===v?" selected":"")+">"+b+"</option>"}).join("")+"</select>"}
+function num(i,k,v){return "<input type='number' min='0' data-i='"+i+"' data-k='"+k+"' value='"+v+"'>"}
+function txt(i,k,v){return "<input data-i='"+i+"' data-k='"+k+"' value='"+String(v).replace(/'/g,"&#39;")+"'>"}
+function selF(i,v){var a=floors.map(function(f){return f.fl});if(a.indexOf(v)<0)a.push(v);return "<select data-i='"+i+"' data-k='fl'>"+a.map(function(x){return "<option"+(x===v?" selected":"")+">"+x+"</option>"}).join("")+"</select>"}
+function render(){
+ $("rows").innerHTML=rows.map(function(r,i){return "<tr><td>"+selF(i,r.fl)+"</td><td id='h"+i+"'></td><td>"+txt(i,"code",r.code)+"</td><td>"+num(i,"cols",r.cols)+"</td><td>"+sel(i,"b1",r.b1)+"</td><td>"+num(i,"n1",r.n1)+"</td><td>"+sel(i,"b2",r.b2)+"</td><td>"+num(i,"n2",r.n2)+"</td><td><span class='tg'><button data-t='"+i+"' data-v='0'"+(r.skip?"":" class='on'")+">逐層</button><button data-t='"+i+"' data-v='1'"+(r.skip?" class='on sk'":"")+">跳層</button></span></td><td id='d"+i+"' data-m='ins' data-i='"+i+"' title='點兩下：指定插筋＝鋼筋支數'></td><td id='a"+i+"' data-m='anc' data-i='"+i+"' title='點兩下：指定錨錠＝鋼筋支數'></td><td id='l"+i+"'></td><td><button class='del' data-x='"+i+"'>刪除</button></td></tr>"}).join("");
+ calc();
+}
+function stats(){
+ var D=+$("D").value||0,by={},bins=[0,0,0,0,0,0,0],per=[],ch={},ord=[];
+ rows.forEach(function(r,i){var f=floors.filter(function(x){return x.fl===r.fl})[0];if(f)r.h=+f.h||0;var c=String(r.code||"");if(!ch[c]){ch[c]=[];ord.push(c)}ch[c].push(i)});
+ function g(b){return by[b]||(by[b]={c:0,d:0,a:0,i:0,w:0})}
+ function bin(L,c){if(c>0)bins[L<5?0:L<6?1:L<7?2:L<8?3:L<9?4:L<10?5:6]+=c}
+ ord.forEach(function(c){
+  var gl=ch[c],n=gl.length,last=n-1,inc=[0,0];
+  gl.forEach(function(i,k){
+   var r=rows[i],nr=k+1<n?rows[gl[k+1]]:null;
+   var h=r.h/100,nx=nr?nr.h/100:0,d=0,a=0,out=[0,0],th=r.skip&&nx>0;
+   [[r.b1,r.n1],[r.b2,r.n2]].forEach(function(p,j){
+    var cnt=(+r.cols||0)*(+p[1]||0);if(!cnt)return;
+    var own=Math.max(cnt-inc[j],0),inn=cnt-own,half=th?Math.ceil(own/2):own,thr=own-half;
+    var nb=nr?(j?nr.b2:nr.b1):p[0],cb=BAR[nb][0]>BAR[p[0]][0]?nb:p[0],sc=g(cb),kc=BAR[cb][1],dc=D*BAR[cb][0]/1000;
+    var gp=function(q){return (+q.cols||0)*(+(j?q.n2:q.n1)||0)},nc=nr?gp(nr):cnt,an=nr?Math.max(cnt-nc,0):0;
+    sc.c+=Math.max(half+inn-an,0);bin(h,half);bin(h+nx,thr);
+    var ac=r.anc==="要"?cnt:(k>0&&k===last?cnt:(k>0?an:0)),ic=r.ins==="要"?cnt:ac;
+    sc.a+=ac;a+=ac;sc.d+=ic;sc.w+=ic*dc*kc;d+=ic;
+    out[j]=thr;
+   });
+   inc=out;
+   per[i]={d:d,a:a,i:0,c:false,L:th?h.toFixed(2)+" / "+(h+nx).toFixed(2):h.toFixed(2)};
+  });
+ });
+ return {by:by,bins:bins,per:per};
+}
+function statsPrev(){
+ var D=+$("D").value||0,by={},bins=[0,0,0,0,0,0,0],per=[],n=rows.length,last=n-1,inc=[0,0];rows.forEach(function(r){var f=floors.filter(function(x){return x.fl===r.fl})[0];if(f)r.h=+f.h||0});
+ function g(b){return by[b]||(by[b]={c:0,d:0,a:0,i:0,w:0})}
+ function bin(L,c){if(c>0)bins[L<5?0:L<6?1:L<7?2:L<8?3:L<9?4:L<10?5:6]+=c}
+ rows.forEach(function(r,i){
+  var h=r.h/100,nx=i+1<n?rows[i+1].h/100:0,d=0,a=0,ii=0,out=[0,0],th=r.skip&&nx>0;
+  [[r.b1,r.n1],[r.b2,r.n2]].forEach(function(p,j){
+   var cnt=(+r.cols||0)*(+p[1]||0);if(!cnt)return;
+   var s=g(p[0]),kg=BAR[p[0]][1],dl=D*BAR[p[0]][0]/1000;
+   var own=Math.max(cnt-inc[j],0),inn=cnt-own,half=th?Math.ceil(own/2):own,thr=own-half;
+   var nb=i+1<n?(j?rows[i+1].b2:rows[i+1].b1):p[0],cb=BAR[nb][0]>BAR[p[0]][0]?nb:p[0],sc=g(cb),kc=BAR[cb][1],dc=D*BAR[cb][0]/1000;
+   var gp=function(q){return (+q.cols||0)*(+(j?q.n2:q.n1)||0)},pc=i>0?gp(rows[i-1]):cnt,nc=i+1<n?gp(rows[i+1]):cnt,ex=i>0?Math.max(cnt-pc,0):0,an=i+1<n?Math.max(cnt-nc,0):0;
+   sc.c+=Math.max(half+inn-an,0);bin(h,half);bin(h+nx,thr);
+   
+   
+   var ac=r.anc==="要"?cnt:(i>0&&i===last?cnt:(i>0?an:0)),ic=r.ins==="要"?cnt:ac;
+   sc.a+=ac;a+=ac;sc.d+=ic;sc.w+=ic*dc*kc;d+=ic;
+   
+   
+   out[j]=thr;
+  });
+  inc=out;
+  per.push({d:d,a:a,i:ii,c:false,L:th?h.toFixed(2)+" / "+(h+nx).toFixed(2):h.toFixed(2)});
+ });
+ return {by:by,bins:bins,per:per};
+}
+function statsOld(){
+ var D=+$("D").value||0,by={},bins=[0,0,0,0,0,0,0],per=[],n=rows.length,last=n-1;
+ var cons=rows.map(function(){return false});
+ while(last>0&&cons[last])last--;
+ function g(b){return by[b]||(by[b]={c:0,d:0,a:0,w:0})}
+ rows.forEach(function(r,i){
+  var L=0,d=0,a=0;
+  if(!cons[i]){
+   L=r.h/100;
+   [[r.b1,r.n1],[r.b2,r.n2]].forEach(function(p){
+    var cnt=(+r.cols||0)*(+p[1]||0);if(!cnt)return;
+    var s=g(p[0]),kg=BAR[p[0]][1],dl=D*BAR[p[0]][0]/1000;
+    s.c+=r.skip?Math.ceil(cnt/2):cnt;s.w+=cnt*L*kg;
+    if(i===0){s.d+=cnt;s.w+=cnt*dl*kg;d+=cnt}
+    if(i===last){s.a+=cnt;a+=cnt}
+    var k=L<5?0:L<6?1:L<7?2:L<8?3:L<9?4:L<10?5:6;bins[k]+=cnt;
+   });
+  }
+  per.push({d:d,a:a,L:L,c:cons[i]});
+ });
+ return {by:by,bins:bins,per:per};
+}
+function calc(){
+ var s=stats();
+ s.per.forEach(function(p,i){$("h"+i).textContent=rows[i].h;$("d"+i).className=rows[i].ins==="要"?"man":"";$("a"+i).className=rows[i].anc==="要"?"man":"";$("d"+i).textContent=p.c?"-":p.d;$("a"+i).textContent=p.a;$("l"+i).innerHTML=p.L});
+ var ks=Object.keys(s.by).sort(function(a,b){return parseInt(a.slice(1))-parseInt(b.slice(1))}),t={c:0,d:0,a:0,i:0,w:0};
+ var h=ks.map(function(k){var v=s.by[k];t.c+=v.c;t.d+=v.d;t.a+=v.a;t.i+=v.i;t.w+=v.w;return "<tr><td>"+k+"</td><td>"+v.c+"</td><td>"+v.d+"</td><td>"+v.a+"</td><td>"+Math.round(v.w).toLocaleString()+"</td></tr>"}).join("");
+ $("sum").innerHTML=h+"<tr class='sum'><td>合計</td><td>"+t.c+"</td><td>"+t.d+"</td><td>"+t.a+"</td><td>"+Math.round(t.w).toLocaleString()+"</td></tr>";
+ var lb=["<5m","5-6m","6-7m","7-8m","8-9m","9-10m",">10m"];
+ $("bh").innerHTML=lb.map(function(x){return "<th>"+x+"</th>"}).join("");
+ $("bv").innerHTML=s.bins.map(function(x){return "<td>"+x+"</td>"}).join("");
+ save();return s;
+}
+$("rows").addEventListener("input",function(e){var t=e.target,i=t.dataset.i,k=t.dataset.k;if(i==null)return;rows[i][k]=t.type==="number"?(+t.value||0):t.value;calc()});
+$("rows").addEventListener("dblclick",function(e){var t=e.target.closest?e.target.closest("td[data-m]"):null;if(!t)return;var r=rows[+t.dataset.i],k=t.dataset.m;r[k]=r[k]==="要"?"否":"要";render()});
+$("rows").addEventListener("click",function(e){var t=e.target;if(t.dataset.t!=null){rows[+t.dataset.t].skip=t.dataset.v==="1";render()}else if(t.dataset.x!=null){rows.splice(+t.dataset.x,1);render()}});
+function nextFl(f){f=String(f).trim().toUpperCase();var b=/^B(\d+)(F?)$/.exec(f),u=/^(\d+)F?$/.exec(f);var rr=/^R(\d+|I)(F?)$/.exec(f);if(rr)return "R"+((rr[1]==="I"?1:+rr[1])+1)+rr[2];if(b){var n=+b[1];return n>1?"B"+(n-1)+b[2]:"1F"}if(u)return (+u[1]+1)+"F";return f+"+"}
+$("add").onclick=function(){var l=rows[rows.length-1]||{fl:"0F",h:300,code:"C1",cols:1,b1:"#10",n1:13,b2:"#10",n2:13};var ix=-1;floors.forEach(function(f,k){if(f.fl===l.fl)ix=k});if(!floors[ix+1])floors.push({fl:nextFl(l.fl),h:l.h||300});renderF();rows.push({fl:floors[ix+1].fl,h:floors[ix+1].h,code:l.code,cols:l.cols,b1:l.b1,n1:l.n1,b2:l.b2,n2:l.n2,skip:false,ins:"否"});render()};
+$("D").oninput=calc;$("P").oninput=save;
+$("exp").onclick=async function(){
+ if(typeof XLSX==="undefined"){alert("Excel 元件載入失敗，請檢查網路。");return}
+ var s=calc(),wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["樓層","高","編號","柱數","號數1","支數1","號數2","支數2","續接","插筋指定","錨錠指定","插筋","錨錠","長度(m)"]].concat(rows.map(function(r,i){return [r.fl,r.h,r.code,r.cols,r.b1,r.n1,r.b2,r.n2,r.skip?"跳層":"逐層",r.ins==="要"?"要":"",r.anc==="要"?"要":"",s.per[i].d,s.per[i].a,s.per[i].c?"併入上層":s.per[i].L]}))),"樓層明細");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["工程案別",$("P").value],["插筋長度係數 D",+$("D").value]]),"工程資訊");
+ var ks=Object.keys(s.by);
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["號數","續接器","插筋","錨錠","重量(kg)"]].concat(ks.map(function(k){var v=s.by[k];return [k,v.c,v.d,v.a,Math.round(v.w)]}))),"鋼筋統計");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["<5m","5-6m","6-7m","7-8m","8-9m","9-10m",">10m"],s.bins]),"長度區間");
+ var out=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+ var nm="柱鋼筋續接統計.xlsx",bl=new Blob([out],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});function fb(){var u=URL.createObjectURL(bl),a=document.createElement("a");a.href=u;a.download=nm;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},1500)}
+ try{var dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;if(!dl){fb();return}
+  await dl.save({filename:nm,data:bl})}catch(e){if(e&&e.code==="declined")return;try{fb()}catch(x){alert("匯出失敗："+(e&&e.message||e))}}
+};
+$("pdf").onclick=async function(){
+ if(typeof html2canvas==="undefined"||!window.jspdf){alert("PDF 元件載入失敗，請檢查網路。");return}
+ var s=calc(),ks=Object.keys(s.by).sort(function(a,b){return parseInt(a.slice(1))-parseInt(b.slice(1))}),t={c:0,d:0,a:0,w:0};
+ var H="padding:6px 10px;border:1px solid #888;background:#eceff3;font-weight:700",C="padding:6px 10px;border:1px solid #888;text-align:center";
+ function tr(a,st){return "<tr>"+a.map(function(x){return "<td style='"+(st||C)+"'>"+x+"</td>"}).join("")+"</tr>"}
+ var body=ks.map(function(k){var v=s.by[k];t.c+=v.c;t.d+=v.d;t.a+=v.a;t.w+=v.w;return tr([k,v.c,v.d,v.a,Math.round(v.w).toLocaleString()])}).join("")+tr(["合計",t.c,t.d,t.a,Math.round(t.w).toLocaleString()],C+";background:#fdf1c8;font-weight:700");
+ var lb=["<5m","5-6m","6-7m","7-8m","8-9m","9-10m",">10m"].map(function(x){return x.replace("<","&lt;").replace(">","&gt;")});
+ var box=document.createElement("div");
+ box.style.cssText="position:fixed;left:-10000px;top:0;width:1000px;padding:24px;background:#fff;color:#000;font:14px 'Noto Sans TC','Microsoft JhengHei','PingFang TC',sans-serif";
+ box.innerHTML="<div style='font-size:20px;font-weight:700;margin-bottom:4px'>柱鋼筋續接器計算</div><div style='font-size:15px;margin-bottom:4px'>工程案別："+($("P").value||"-").replace(/</g,"&lt;")+"</div><div style='color:#555;margin-bottom:18px'>插筋長度係數 D："+$("D").value+"　日期："+new Date().toLocaleDateString("zh-TW")+"</div>"+
+  "<div style='font-weight:700;margin-bottom:6px'>鋼筋統計總表</div><table style='border-collapse:collapse;width:100%;margin-bottom:22px'>"+tr(["號數","續接器","插筋","錨錠","重量(kg)"],H)+body+"</table>"+
+  "<div style='font-weight:700;margin-bottom:6px'>長度區間統計 (支數)</div><table style='border-collapse:collapse;width:100%'>"+tr(lb,H)+tr(s.bins)+"</table>";
+ document.body.appendChild(box);
+ try{
+  var cv=await html2canvas(box,{scale:2,backgroundColor:"#ffffff"});box.remove();
+  var pdf=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"}),w=277,h=cv.height*w/cv.width;if(h>190){w=w*190/h;h=190}
+  pdf.addImage(cv.toDataURL("image/jpeg",0.95),"JPEG",10,10,w,h);
+  var bl=pdf.output("blob"),nm="柱鋼筋續接統計.pdf";
+  var dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+  if(dl){try{await dl.save({filename:nm,data:bl});return}catch(e){if(e&&e.code==="declined")return}}
+  var u=URL.createObjectURL(bl),a=document.createElement("a");a.href=u;a.download=nm;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},1500);
+ }catch(e){box.remove();alert("匯出失敗："+(e&&e.message||e))}
+};
+$("impbtn").onclick=function(){$("imp").click()};
+$("imp").onchange=function(e){
+ var f=e.target.files[0];if(!f)return;
+ var fr=new FileReader();fr.onload=function(){try{
+  var wb=XLSX.read(fr.result,{type:"array"}),a=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1}),out=[];
+  var ws=wb.Sheets["工程資訊"];if(ws){var pi=XLSX.utils.sheet_to_json(ws,{header:1});if(pi[0]&&pi[0][1]){$("P").value=pi[0][1];save()}}
+  a.slice(1).forEach(function(c){if(!c||c[0]==null||c[0]==="")return;
+   out.push({fl:String(c[0]),h:+c[1]||0,code:String(c[2]||""),cols:+c[3]||0,b1:BAR[c[4]]?c[4]:"#10",n1:+c[5]||0,b2:BAR[c[6]]?c[6]:"#10",n2:+c[7]||0,skip:c[8]==="跳層",ins:c[9]==="要"?"要":"否",anc:c[10]==="要"?"要":"否"})});
+  if(out.length){rows=out;floors=[];out.forEach(function(r){if(!floors.some(function(f){return f.fl===r.fl}))floors.push({fl:r.fl,h:r.h})});renderF();render()}else alert("找不到可匯入的資料列（欄位順序：樓層、高、編號、柱數、號數1、支數1、號數2、支數2、續接）。")
+ }catch(x){alert("匯入失敗："+x.message)}};
+ fr.readAsArrayBuffer(f);e.target.value="";
+};
+function renderF(){$("fls").innerHTML=floors.map(function(f,i){return "<tr><td><input data-f='"+i+"' data-k='fl' value='"+String(f.fl).replace(/'/g,"&#39;")+"'></td><td><input type='number' min='0' data-f='"+i+"' data-k='h' value='"+f.h+"'></td><td><button class='del' data-fx='"+i+"'>刪除</button></td></tr>"}).join("")}
+$("fls").addEventListener("input",function(e){var t=e.target,i=t.dataset.f;if(i==null)return;var f=floors[i];if(t.dataset.k==="fl"){var o=f.fl;f.fl=t.value;rows.forEach(function(r){if(r.fl===o)r.fl=t.value})}else f.h=+t.value||0;render()});
+$("fls").addEventListener("click",function(e){var x=e.target.dataset.fx;if(x!=null){floors.splice(+x,1);renderF();render()}});
+$("addF").onclick=function(){var l=floors[floors.length-1];floors.push({fl:l?nextFl(l.fl):"B2",h:l?l.h:300});renderF();render()};
+load();renderF();render();
+</script>
+</body>
+</html>
